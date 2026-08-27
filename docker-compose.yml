@@ -34,6 +34,11 @@ services:
       DATABASE_URL: postgresql+asyncpg://crossborder:crossborder@postgres:5432/crossborder
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: http://localhost:3006
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-12345678}
+    command: >-
+      sh -c "alembic upgrade head &&
+      python -m crossborder_api.bootstrap &&
+      uvicorn crossborder_api.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
     depends_on:

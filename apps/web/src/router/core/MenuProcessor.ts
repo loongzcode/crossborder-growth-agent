@@ -8,10 +8,7 @@
  */
 
 import type { AppRouteRecord } from '@/types/router'
-import { useUserStore } from '@/store/modules/user'
-import { useAppMode } from '@/hooks/core/useAppMode'
 import { fetchGetMenuList } from '@/api/system-manage'
-import { asyncRoutes } from '../routes/asyncRoutes'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
 
@@ -20,14 +17,7 @@ export class MenuProcessor {
    * 获取菜单数据
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
-    const { isFrontendMode } = useAppMode()
-
-    let menuList: AppRouteRecord[]
-    if (isFrontendMode.value) {
-      menuList = await this.processFrontendMenu()
-    } else {
-      menuList = await this.processBackendMenu()
-    }
+    const menuList = await this.processBackendMenu()
 
     // 在规范化路径之前，验证原始路径配置
     this.validateMenuPaths(menuList)
@@ -37,48 +27,11 @@ export class MenuProcessor {
   }
 
   /**
-   * 处理前端控制模式的菜单
-   */
-  private async processFrontendMenu(): Promise<AppRouteRecord[]> {
-    const userStore = useUserStore()
-    const roles = userStore.info?.roles
-
-    let menuList = [...asyncRoutes]
-
-    // 根据角色过滤菜单
-    if (roles && roles.length > 0) {
-      menuList = this.filterMenuByRoles(menuList, roles)
-    }
-
-    return this.filterEmptyMenus(menuList)
-  }
-
-  /**
    * 处理后端控制模式的菜单
    */
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     const list = await fetchGetMenuList()
     return this.filterEmptyMenus(list)
-  }
-
-  /**
-   * 根据角色过滤菜单
-   */
-  private filterMenuByRoles(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {
-    return menu.reduce((acc: AppRouteRecord[], item) => {
-      const itemRoles = item.meta?.roles
-      const hasPermission = !itemRoles || itemRoles.some((role) => roles?.includes(role))
-
-      if (hasPermission) {
-        const filteredItem = { ...item }
-        if (filteredItem.children?.length) {
-          filteredItem.children = this.filterMenuByRoles(filteredItem.children, roles)
-        }
-        acc.push(filteredItem)
-      }
-
-      return acc
-    }, [])
   }
 
   /**

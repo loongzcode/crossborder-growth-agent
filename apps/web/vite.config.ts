@@ -17,7 +17,7 @@ export default ({ mode }: { mode: string }) => {
   const VITE_VERSION = env.VITE_VERSION || '0.1.0'
   const VITE_PORT = env.VITE_PORT || '3006'
   const VITE_BASE_URL = env.VITE_BASE_URL || '/'
-  const VITE_API_URL = env.VITE_API_URL || '/api'
+  const VITE_API_URL = env.VITE_API_URL || '/'
   const VITE_API_PROXY_URL = env.VITE_API_PROXY_URL || 'http://127.0.0.1:8000'
 
   console.log(`🚀 API_URL = ${VITE_API_URL}`)

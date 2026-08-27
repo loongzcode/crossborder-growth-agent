@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     app_log_level: str = "INFO"
     app_secret_key: SecretStr | None = None
+    access_token_minutes: int = 480
+    refresh_token_days: int = 7
 
     database_url: str = "postgresql+asyncpg://crossborder:crossborder@localhost:5432/crossborder"
     redis_url: str = "redis://localhost:6379/0"
@@ -39,6 +41,12 @@ class Settings(BaseSettings):
     @property
     def parsed_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def signing_secret(self) -> str:
+        if self.app_secret_key:
+            return self.app_secret_key.get_secret_value()
+        return "crossborder-development-signing-key-change-before-production"
 
     @model_validator(mode="after")
     def validate_production_secret(self) -> "Settings":

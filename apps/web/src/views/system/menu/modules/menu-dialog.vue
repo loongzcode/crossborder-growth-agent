@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
   import type { FormRules } from 'element-plus'
-  import { ElIcon, ElTooltip } from 'element-plus'
+  import { ElIcon, ElMessage, ElTooltip } from 'element-plus'
   import { QuestionFilled } from '@element-plus/icons-vue'
   import { formatMenuTitle } from '@/utils/router'
   import type { AppRouteRecord } from '@/types/router'
@@ -70,7 +70,8 @@
   }
 
   interface MenuFormData {
-    id: number
+    id: string
+    parentId: string
     name: string
     path: string
     label: string
@@ -101,6 +102,7 @@
     editData?: AppRouteRecord | any
     type?: 'menu' | 'button'
     lockType?: boolean
+    menuOptions?: Array<{ label: string; value: string }>
   }
 
   interface Emits {
@@ -121,7 +123,8 @@
 
   const form = reactive<MenuFormData & { menuType: 'menu' | 'button' }>({
     menuType: 'menu',
-    id: 0,
+    id: '',
+    parentId: '',
     name: '',
     path: '',
     label: '',
@@ -170,6 +173,16 @@
     if (form.menuType === 'menu') {
       return [
         ...baseItems,
+        {
+          label: '上级菜单',
+          key: 'parentId',
+          type: 'select',
+          props: {
+            clearable: true,
+            placeholder: '留空表示一级菜单',
+            options: props.menuOptions || []
+          }
+        },
         { label: '菜单名称', key: 'name', type: 'input', props: { placeholder: '菜单名称' } },
         {
           label: createLabelTooltip(
@@ -293,7 +306,8 @@
 
     if (form.menuType === 'menu') {
       const row = props.editData
-      form.id = row.id || 0
+      form.id = row.id || ''
+      form.parentId = row.parentId || ''
       form.name = formatMenuTitle(row.meta?.title || '')
       form.path = row.path || ''
       form.label = row.name || ''
@@ -331,8 +345,6 @@
     try {
       await formRef.value.validate()
       emit('submit', { ...form })
-      ElMessage.success(`${isEdit.value ? '编辑' : '新增'}成功`)
-      handleCancel()
     } catch {
       ElMessage.error('表单校验失败，请检查输入')
     }
@@ -362,7 +374,7 @@
       if (newVal) {
         form.menuType = props.type
         nextTick(() => {
-          if (props.editData) {
+          if (props.editData && !props.editData.isNew) {
             loadFormData()
           }
         })

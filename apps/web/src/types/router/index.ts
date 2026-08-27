@@ -47,8 +47,10 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   keepAlive?: boolean
   /** 操作权限 */
   authList?: Array<{
+    id?: string
     title: string
     authMark: string
+    permissionCode?: string
   }>
   /** 是否为一级菜单 */
   isFirstLevel?: boolean
@@ -73,7 +75,11 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
  * 扩展 Vue Router 的路由记录类型
  */
 export interface AppRouteRecord extends Omit<RouteRecordRaw, 'meta' | 'children' | 'component'> {
-  id?: number
+  id?: string | number
+  parentId?: string | null
+  permissionId?: string
+  permissionCode?: string
+  parentMenuId?: string
   meta: RouteMeta
   children?: AppRouteRecord[]
   component?: string | (() => Promise<any>)

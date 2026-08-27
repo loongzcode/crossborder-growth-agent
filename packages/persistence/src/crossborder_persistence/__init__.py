@@ -20,6 +20,16 @@ from crossborder_persistence.facts import (
     SyncJobModel,
 )
 from crossborder_persistence.models import AgentRunModel, Base, OrganizationModel
+from crossborder_persistence.system_models import (
+    SystemMenuModel,
+    SystemPermissionModel,
+    SystemRoleModel,
+    SystemUserModel,
+    role_menu_assignments,
+    role_permission_assignments,
+    user_role_assignments,
+)
+from crossborder_persistence.system_seed import seed_default_system
 
 __all__ = [
     "AdMetricDailyModel",
@@ -41,7 +51,15 @@ __all__ = [
     "ReviewModel",
     "SchemaMappingModel",
     "SyncJobModel",
+    "SystemMenuModel",
+    "SystemPermissionModel",
+    "SystemRoleModel",
+    "SystemUserModel",
     "create_engine",
     "create_session_factory",
+    "role_menu_assignments",
+    "role_permission_assignments",
+    "seed_default_system",
     "session_scope",
+    "user_role_assignments",
 ]

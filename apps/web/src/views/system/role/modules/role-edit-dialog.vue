@@ -33,7 +33,8 @@
 </template>
 
 <script setup lang="ts">
-  import type { FormInstance, FormRules } from 'element-plus'
+  import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+  import { fetchCreateRole, fetchUpdateRole } from '@/api/system-manage'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
@@ -85,12 +86,13 @@
    * 表单数据
    */
   const form = reactive<RoleListItem>({
-    roleId: 0,
+    roleId: '',
     roleName: '',
     roleCode: '',
     description: '',
     createTime: '',
-    enabled: true
+    enabled: true,
+    isSystem: false
   })
 
   /**
@@ -123,12 +125,13 @@
       Object.assign(form, props.roleData)
     } else {
       Object.assign(form, {
-        roleId: 0,
+        roleId: '',
         roleName: '',
         roleCode: '',
         description: '',
         createTime: '',
-        enabled: true
+        enabled: true,
+        isSystem: false
       })
     }
   }
@@ -150,13 +153,23 @@
 
     try {
       await formRef.value.validate()
-      // TODO: 调用新增/编辑接口
+      const payload: Api.SystemManage.RoleWrite = {
+        roleName: form.roleName,
+        roleCode: form.roleCode,
+        description: form.description,
+        enabled: form.enabled
+      }
+      if (props.dialogType === 'add') {
+        await fetchCreateRole(payload)
+      } else if (props.roleData?.roleId) {
+        await fetchUpdateRole(props.roleData.roleId, payload)
+      }
       const message = props.dialogType === 'add' ? '新增成功' : '修改成功'
       ElMessage.success(message)
       emit('success')
       handleClose()
-    } catch (error) {
-      console.log('表单验证失败:', error)
+    } catch {
+      return
     }
   }
 </script>

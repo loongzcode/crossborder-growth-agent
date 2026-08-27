@@ -78,7 +78,7 @@ declare namespace Api {
     interface UserInfo {
       buttons: string[]
       roles: string[]
-      userId: number
+      userId: string
       userName: string
       email: string
       avatar?: string
@@ -92,7 +92,7 @@ declare namespace Api {
 
     /** 用户列表项 */
     interface UserListItem {
-      id: number
+      id: string
       avatar: string
       status: string
       userName: string
@@ -118,12 +118,13 @@ declare namespace Api {
 
     /** 角色列表项 */
     interface RoleListItem {
-      roleId: number
+      roleId: string
       roleName: string
       roleCode: string
       description: string
       enabled: boolean
       createTime: string
+      isSystem: boolean
     }
 
     /** 角色搜索参数 */
@@ -134,5 +135,54 @@ declare namespace Api {
           endTime: string | null
         }
     >
+
+    interface UserWrite {
+      userName: string
+      nickName: string
+      userEmail: string
+      userPhone: string
+      userGender: string
+      avatar: string
+      password?: string
+      userRoles: string[]
+      enabled: boolean
+    }
+
+    interface RoleWrite {
+      roleName: string
+      roleCode: string
+      description: string
+      enabled: boolean
+    }
+
+    interface RoleAccess {
+      menuIds: string[]
+      permissionIds: string[]
+    }
+
+    interface MenuWrite {
+      parentId?: string | null
+      name: string
+      path: string
+      component: string
+      title: string
+      icon: string
+      sort: number
+      enabled: boolean
+      hidden: boolean
+      hideTab: boolean
+      keepAlive: boolean
+      fixedTab: boolean
+      fullPage: boolean
+      link: string
+      iframe: boolean
+      activePath: string
+    }
+
+    interface PermissionWrite {
+      title: string
+      code: string
+      sort: number
+    }
   }
 }
