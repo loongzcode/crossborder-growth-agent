@@ -1,11 +1,8 @@
-from pathlib import Path
-
 import pytest
+from tests.sample_factories import dataset_csv
 
 from crossborder_connectors import preview_dataset_file
 from crossborder_domain import CostRecord, DataDomain, OrderRecord
-
-ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.parametrize(
@@ -24,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_all_standard_dataset_samples_pass_the_same_quality_gate(
     domain: DataDomain, filename: str
 ) -> None:
-    content = (ROOT / "data" / "samples" / filename).read_bytes()
+    content = dataset_csv(domain)
 
     preview = preview_dataset_file(content, filename, domain)
 
@@ -37,7 +34,7 @@ def test_all_standard_dataset_samples_pass_the_same_quality_gate(
 
 
 def test_order_datetime_is_interpreted_with_explicit_source_timezone() -> None:
-    content = (ROOT / "data" / "samples" / "orders_sample.csv").read_bytes()
+    content = dataset_csv(DataDomain.ORDERS)
 
     preview = preview_dataset_file(content, "orders.csv", DataDomain.ORDERS)
 
@@ -48,7 +45,7 @@ def test_order_datetime_is_interpreted_with_explicit_source_timezone() -> None:
 
 
 def test_percentage_and_decimal_cost_rates_normalize_to_same_scale() -> None:
-    content = (ROOT / "data" / "samples" / "costs_sample.csv").read_bytes()
+    content = dataset_csv(DataDomain.COSTS)
 
     preview = preview_dataset_file(content, "costs.csv", DataDomain.COSTS)
 

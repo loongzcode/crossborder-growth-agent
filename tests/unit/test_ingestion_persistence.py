@@ -1,17 +1,15 @@
-from pathlib import Path
 from typing import cast
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.sample_factories import dataset_csv
 
 from crossborder_connectors import preview_dataset_file
 from crossborder_domain import DataDomain
 from crossborder_persistence import Base
 from crossborder_persistence.ingestion import IngestionConflictError, import_preview
-
-ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_business_fact_metadata_contains_all_final_data_domains() -> None:
@@ -38,7 +36,7 @@ def test_business_fact_metadata_contains_all_final_data_domains() -> None:
 
 
 async def test_import_rejects_data_source_outside_organization_scope() -> None:
-    content = (ROOT / "data" / "samples" / "products_sample.csv").read_bytes()
+    content = dataset_csv(DataDomain.PRODUCTS)
     preview = preview_dataset_file(content, "products.csv", DataDomain.PRODUCTS)
     session = AsyncMock(spec=AsyncSession)
     session.scalar.return_value = None

@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "crossborder-growth-agent"
 version = "0.1.0"
 description = "跨境电商多 Agent 经营决策系统"
-readme = "README.md"
 requires-python = ">=3.12,<3.15"
 license = { text = "Proprietary" }
 dependencies = [

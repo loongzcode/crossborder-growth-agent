@@ -1,16 +1,32 @@
 from collections.abc import AsyncIterator
-from pathlib import Path
 from typing import cast
 from uuid import uuid4
 
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.sample_factories import dataset_csv
 
 from crossborder_api.config import Settings
 from crossborder_api.dependencies import get_db_session
 from crossborder_api.main import create_app
+from crossborder_domain import DataDomain
 
-ROOT = Path(__file__).resolve().parents[2]
+
+def test_ingestion_route_split_preserves_public_paths() -> None:
+    app = create_app(Settings(app_env="test", _env_file=None))
+    ingestion_paths = {
+        path for path in app.openapi()["paths"] if path.startswith("/api/v1/ingestion/")
+    }
+
+    assert ingestion_paths == {
+        "/api/v1/ingestion/advertising/fields",
+        "/api/v1/ingestion/advertising/import",
+        "/api/v1/ingestion/advertising/preview",
+        "/api/v1/ingestion/batches/{raw_batch_id}",
+        "/api/v1/ingestion/datasets/{domain}/fields",
+        "/api/v1/ingestion/datasets/{domain}/import",
+        "/api/v1/ingestion/datasets/{domain}/preview",
+    }
 
 
 async def test_advertising_csv_preview_returns_quality_and_metrics() -> None:
@@ -78,7 +94,7 @@ async def test_import_rejects_file_changed_after_preview() -> None:
 
     app.dependency_overrides[get_db_session] = fake_session
     transport = ASGITransport(app=app)
-    content = (ROOT / "data" / "samples" / "products_sample.csv").read_bytes()
+    content = dataset_csv(DataDomain.PRODUCTS)
 
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(
