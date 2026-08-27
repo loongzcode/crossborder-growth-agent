@@ -4,7 +4,7 @@
 
 ## Project status
 
-Product requirements and the delivery plan are defined. The Vue administration console has been initialized from Art Design Pro, cleaned of upstream demo modules, and is being adapted to the cross-border operating workflows. Backend foundation work is next.
+Product requirements and the delivery plan are defined. The Vue administration console is initialized from Art Design Pro and mapped to the final operating workflows. The FastAPI foundation, strict Agent contracts, async persistence boundary, initial migration, and automated test baseline are implemented. Data ingestion and metric services are next.
 
 ## Core capabilities
 
@@ -37,7 +37,13 @@ See [docs/architecture.md](docs/architecture.md) for the system boundary and col
 ```text
 .
 ├── apps/
+│   ├── api/              FastAPI application
 │   └── web/              Vue administration console
+├── packages/
+│   ├── domain/           Strict domain and Agent contracts
+│   └── persistence/      Async SQLAlchemy infrastructure
+├── migrations/           Alembic database migrations
+├── tests/                Unit and integration tests
 ├── docs/                 Architecture and product decisions
 ├── .editorconfig         Shared editor conventions
 ├── .env.example          Environment variable contract
@@ -46,6 +52,22 @@ See [docs/architecture.md](docs/architecture.md) for the system boundary and col
 ```
 
 See [docs/requirements.md](docs/requirements.md), [docs/development-plan.md](docs/development-plan.md), and [docs/third-party-notices.md](docs/third-party-notices.md).
+
+## Backend quick start
+
+```bash
+uv sync --group dev
+uv run uvicorn crossborder_api.main:app --reload
+```
+
+Development API documentation is available at `http://127.0.0.1:8000/api/docs`. Run checks with:
+
+```bash
+uv run ruff check apps/api/src packages migrations tests
+uv run ruff format --check apps/api/src packages migrations tests
+uv run mypy
+uv run pytest
+```
 
 ## Data policy
 
