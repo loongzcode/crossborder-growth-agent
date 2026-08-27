@@ -1,20 +1,25 @@
 """Advertising report preview, normalization, and quality checks."""
 
 import hashlib
-import re
-from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Any
 
 from pydantic import ValidationError
 
 from crossborder_analytics import AdMetricInput, calculate_ad_metrics
 from crossborder_connectors.mapping import (
+    DATASET_SCHEMA_VERSION,
     REQUIRED_ADVERTISING_FIELDS,
     map_advertising_headers,
     recognized_field,
 )
 from crossborder_connectors.tabular import read_tabular
+from crossborder_connectors.values import (
+    parse_date,
+    parse_decimal,
+    parse_int,
+    stable_record_key,
+)
 from crossborder_domain import (
     AdvertisingIngestionPreview,
     AdvertisingRecord,
@@ -45,58 +50,6 @@ def _find_header(rows: list[list[Any]]) -> tuple[int, list[str]]:
     return index, headers
 
 
-def _parse_date(value: Any) -> date:
-    if isinstance(value, datetime):
-        return value.date()
-    if isinstance(value, date):
-        return value
-    raw = str(value or "").strip()
-    for pattern in ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d", "%m/%d/%Y"):
-        try:
-            return datetime.strptime(raw, pattern).date()
-        except ValueError:
-            continue
-    raise ValueError("日期格式无法识别")
-
-
-def _parse_decimal(value: Any) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    if isinstance(value, int | float):
-        return Decimal(str(value))
-    raw = re.sub(r"[^0-9.\-]", "", str(value or "").strip())
-    if not raw:
-        raise ValueError("数值为空")
-    try:
-        return Decimal(raw)
-    except InvalidOperation as exc:
-        raise ValueError("数值格式无法识别") from exc
-
-
-def _parse_int(value: Any) -> int:
-    parsed = _parse_decimal(value)
-    if parsed != parsed.to_integral_value():
-        raise ValueError("必须为整数")
-    return int(parsed)
-
-
-def _idempotency_key(values: dict[str, Any]) -> str:
-    fields = (
-        "report_date",
-        "campaign_id",
-        "ad_group_id",
-        "ad_id",
-        "currency",
-        "impressions",
-        "clicks",
-        "spend",
-        "orders",
-        "revenue",
-    )
-    payload = "|".join(str(values.get(field, "")) for field in fields)
-    return hashlib.sha256(payload.encode()).hexdigest()
-
-
 def _row_values(row: list[Any], mappings: list[ColumnMapping]) -> dict[str, Any]:
     values: dict[str, Any] = {}
     for index, mapping in enumerate(mappings):
@@ -111,20 +64,34 @@ def _row_values(row: list[Any], mappings: list[ColumnMapping]) -> dict[str, Any]
 
 def _normalize_record(values: dict[str, Any], row_number: int) -> AdvertisingRecord:
     normalized: dict[str, Any] = {
-        "report_date": _parse_date(values.get("report_date")),
+        "report_date": parse_date(values.get("report_date")),
         "campaign_id": str(values.get("campaign_id") or "").strip(),
         "campaign_name": str(values.get("campaign_name") or "").strip() or None,
         "ad_group_id": str(values.get("ad_group_id") or "").strip() or None,
         "ad_id": str(values.get("ad_id") or "").strip() or None,
         "currency": str(values.get("currency") or "").strip().upper(),
-        "impressions": _parse_int(values.get("impressions")),
-        "clicks": _parse_int(values.get("clicks")),
-        "spend": _parse_decimal(values.get("spend")),
-        "orders": _parse_int(values.get("orders")),
-        "revenue": _parse_decimal(values.get("revenue")),
+        "impressions": parse_int(values.get("impressions")),
+        "clicks": parse_int(values.get("clicks")),
+        "spend": parse_decimal(values.get("spend")),
+        "orders": parse_int(values.get("orders")),
+        "revenue": parse_decimal(values.get("revenue")),
         "source_row_number": row_number,
     }
-    normalized["idempotency_key"] = _idempotency_key(normalized)
+    normalized["idempotency_key"] = stable_record_key(
+        normalized,
+        (
+            "report_date",
+            "campaign_id",
+            "ad_group_id",
+            "ad_id",
+            "currency",
+            "impressions",
+            "clicks",
+            "spend",
+            "orders",
+            "revenue",
+        ),
+    )
     return AdvertisingRecord.model_validate(normalized)
 
 
@@ -163,6 +130,7 @@ def preview_advertising_file(content: bytes, filename: str) -> AdvertisingIngest
     ]
     records: list[AdvertisingRecord] = []
     seen_keys: set[str] = set()
+    seen_business_keys: set[tuple[object, ...]] = set()
     if not missing_fields and not any(
         mapping.status is MappingStatus.NEEDS_REVIEW for mapping in mappings
     ):
@@ -179,7 +147,25 @@ def preview_advertising_file(content: bytes, filename: str) -> AdvertisingIngest
                         )
                     )
                     continue
+                business_key = (
+                    record.report_date,
+                    record.campaign_id,
+                    record.ad_group_id or "",
+                    record.ad_id or "",
+                )
+                if business_key in seen_business_keys:
+                    issues.append(
+                        DataQualityIssue(
+                            code="duplicate_business_key",
+                            severity=QualitySeverity.ERROR,
+                            message="该行与文件中已有记录的广告事实粒度相同，已跳过",
+                            row_number=row_number,
+                            value=[str(value) for value in business_key],
+                        )
+                    )
+                    continue
                 seen_keys.add(record.idempotency_key)
+                seen_business_keys.add(business_key)
                 records.append(record)
             except (ValueError, ValidationError) as exc:
                 issues.append(
@@ -201,7 +187,9 @@ def preview_advertising_file(content: bytes, filename: str) -> AdvertisingIngest
         )
     ).model_dump()
     return AdvertisingIngestionPreview(
+        schema_version=DATASET_SCHEMA_VERSION,
         filename=filename,
+        file_checksum_sha256=hashlib.sha256(content).hexdigest(),
         header_row_number=header_index + 1,
         source_row_count=len(source_rows),
         accepted_row_count=len(records),

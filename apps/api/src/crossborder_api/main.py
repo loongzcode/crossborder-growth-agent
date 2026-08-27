@@ -1,5 +1,8 @@
 """FastAPI application factory."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,16 +12,29 @@ from crossborder_api.middleware import request_context_middleware
 from crossborder_api.routes.health import router as health_router
 from crossborder_api.routes.ingestion import router as ingestion_router
 from crossborder_api.routes.metrics import router as metrics_router
+from crossborder_persistence import create_engine, create_session_factory
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     runtime_settings = settings or get_settings()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        engine = create_engine(runtime_settings.database_url)
+        app.state.database_engine = engine
+        app.state.session_factory = create_session_factory(engine)
+        try:
+            yield
+        finally:
+            await engine.dispose()
+
     app = FastAPI(
         title=runtime_settings.app_name,
         version=runtime_settings.app_version,
         docs_url="/api/docs" if runtime_settings.app_env != "production" else None,
         redoc_url=None,
         openapi_url="/api/openapi.json" if runtime_settings.app_env != "production" else None,
+        lifespan=lifespan,
     )
     app.state.settings = runtime_settings
 

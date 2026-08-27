@@ -4,7 +4,7 @@
 
 ## Project status
 
-Product requirements and the delivery plan are defined. The Vue administration console is initialized from Art Design Pro and mapped to the final operating workflows. The backend now includes strict Agent contracts, async persistence, advertising CSV/XLSX preview, schema governance, quality checks, and versioned business metric services.
+Product requirements and the delivery plan are defined. The Vue administration console is initialized from Art Design Pro and mapped to the final operating workflows. The backend now includes strict Agent contracts, async persistence, schema-driven CSV/XLSX ingestion for all nine business data domains, organization-scoped idempotent imports, batch lineage, quality checks, and versioned business metric services.
 
 ## Core capabilities
 
@@ -77,6 +77,17 @@ Preview the synthetic TikTok Ads export without importing it:
 curl -F "file=@data/samples/tiktok_ads_sample.csv" \
   http://127.0.0.1:8000/api/v1/ingestion/advertising/preview
 ```
+
+The same preview contract is available for `orders`, `products`, `costs`, `inventory`, `refunds`, `reviews`, `currency_rates`, and `creatives`:
+
+```bash
+curl -F "file=@data/samples/orders_sample.csv" \
+  http://127.0.0.1:8000/api/v1/ingestion/datasets/orders/preview
+```
+
+Import is deliberately a second request. The client must submit the exact file again with the SHA-256 returned by preview, an organization-scoped data source, and the organization header. Reusing the same data-source/file checksum returns `duplicate` without creating another fact batch. Batch lineage is available from the `lineage_path` returned by import.
+
+The public samples are synthetic. Production platform authorization and raw-file object storage are not claimed by this repository yet.
 
 ## Data policy
 

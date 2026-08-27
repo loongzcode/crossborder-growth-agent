@@ -8,11 +8,18 @@ from crossborder_connectors.base import (
     ConnectorErrorCode,
     SyncRequest,
 )
-from crossborder_connectors.mapping import ADVERTISING_FIELD_ALIASES, map_advertising_headers
+from crossborder_connectors.datasets import preview_dataset_file
+from crossborder_connectors.mapping import (
+    ADVERTISING_FIELD_ALIASES,
+    DATASET_FIELD_ALIASES,
+    map_advertising_headers,
+    map_dataset_headers,
+)
 from crossborder_connectors.synthetic import SyntheticAdvertisingConnector
 
 __all__ = [
     "ADVERTISING_FIELD_ALIASES",
+    "DATASET_FIELD_ALIASES",
     "Connector",
     "ConnectorBatch",
     "ConnectorError",
@@ -20,5 +27,7 @@ __all__ = [
     "SyncRequest",
     "SyntheticAdvertisingConnector",
     "map_advertising_headers",
+    "map_dataset_headers",
     "preview_advertising_file",
+    "preview_dataset_file",
 ]
