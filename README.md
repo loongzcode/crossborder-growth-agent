@@ -53,6 +53,8 @@ See [docs/architecture.md](docs/architecture.md) for the system boundary and col
 └── README.md             Project overview
 ```
 
+Implementation status is tracked item by item in [docs/implementation-tracker.md](docs/implementation-tracker.md). A task is only checked after its implementation and acceptance evidence are both present.
+
 See [docs/requirements.md](docs/requirements.md), [docs/development-plan.md](docs/development-plan.md), and [docs/third-party-notices.md](docs/third-party-notices.md).
 
 ## Backend quick start
