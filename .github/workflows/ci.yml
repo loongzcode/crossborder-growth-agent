@@ -36,5 +36,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: apps/web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Art Design Pro's Vite plugins generate the ignored auto-import
+      # declarations and ESLint globals file required by clean checkouts.
+      - run: pnpm build:vite
       - run: pnpm lint
-      - run: pnpm build
+      - run: pnpm typecheck
