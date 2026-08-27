@@ -4,7 +4,7 @@
 
 ## Project status
 
-Repository initialized. The current milestone is architecture and domain design; application code has not been implemented yet.
+Product requirements and the delivery plan are defined. The Vue administration console has been initialized from Art Design Pro, cleaned of upstream demo modules, and is being adapted to the cross-border operating workflows. Backend foundation work is next.
 
 ## Core capabilities
 
@@ -36,12 +36,16 @@ See [docs/architecture.md](docs/architecture.md) for the system boundary and col
 
 ```text
 .
+├── apps/
+│   └── web/              Vue administration console
 ├── docs/                 Architecture and product decisions
 ├── .editorconfig         Shared editor conventions
 ├── .env.example          Environment variable contract
 ├── .gitignore            Local and sensitive-file exclusions
 └── README.md             Project overview
 ```
+
+See [docs/requirements.md](docs/requirements.md), [docs/development-plan.md](docs/development-plan.md), and [docs/third-party-notices.md](docs/third-party-notices.md).
 
 ## Data policy
 

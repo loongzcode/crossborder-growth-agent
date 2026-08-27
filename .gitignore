@@ -42,3 +42,4 @@ logs/
 # Local tooling
 .cache/
 .tmp/
+work/
