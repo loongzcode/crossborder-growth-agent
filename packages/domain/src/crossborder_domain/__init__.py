@@ -12,14 +12,30 @@ from crossborder_domain.agents import (
     WorkflowStatus,
 )
 from crossborder_domain.common import Money, TimeRange
+from crossborder_domain.data import (
+    AdvertisingIngestionPreview,
+    AdvertisingRecord,
+    ColumnMapping,
+    DataDomain,
+    DataQualityIssue,
+    MappingStatus,
+    QualitySeverity,
+)
 
 __all__ = [
+    "AdvertisingIngestionPreview",
+    "AdvertisingRecord",
     "AgentName",
     "AgentRequest",
     "AgentResult",
     "AgentResultStatus",
+    "ColumnMapping",
+    "DataDomain",
+    "DataQualityIssue",
     "EvidenceReference",
+    "MappingStatus",
     "Money",
+    "QualitySeverity",
     "RecommendedAction",
     "RiskFinding",
     "RiskSeverity",

@@ -1,6 +1,7 @@
 """Centralized exception handling."""
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -28,6 +29,13 @@ async def unhandled_exception_handler(request: Request, _exc: Exception) -> JSON
     return _error_response(request, 500, "服务内部错误", "服务暂时无法完成请求")
 
 
+async def validation_exception_handler(
+    request: Request, _exc: RequestValidationError
+) -> JSONResponse:
+    return _error_response(request, 422, "参数校验失败", "请求字段或数据格式不符合要求")
+
+
 def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, unhandled_exception_handler)

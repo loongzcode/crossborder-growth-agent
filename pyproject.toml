@@ -13,8 +13,10 @@ dependencies = [
   "alembic>=1.14,<2",
   "asyncpg>=0.30,<1",
   "fastapi>=0.115,<1",
+  "openpyxl>=3.1,<4",
   "pydantic>=2.10,<3",
   "pydantic-settings>=2.7,<3",
+  "python-multipart>=0.0.20,<1",
   "sqlalchemy[asyncio]>=2.0.36,<3",
   "structlog>=24.4,<27",
   "uvicorn[standard]>=0.32,<1",
@@ -32,6 +34,8 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = [
   "apps/api/src/crossborder_api",
+  "packages/analytics/src/crossborder_analytics",
+  "packages/connectors/src/crossborder_connectors",
   "packages/domain/src/crossborder_domain",
   "packages/persistence/src/crossborder_persistence",
 ]
@@ -46,6 +50,8 @@ target-version = "py312"
 line-length = 100
 src = [
   "apps/api/src",
+  "packages/analytics/src",
+  "packages/connectors/src",
   "packages/domain/src",
   "packages/persistence/src",
   "tests",
@@ -62,9 +68,17 @@ indent-style = "space"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["crossborder_api", "crossborder_domain", "crossborder_persistence"]
+packages = [
+  "crossborder_api",
+  "crossborder_analytics",
+  "crossborder_connectors",
+  "crossborder_domain",
+  "crossborder_persistence",
+]
 mypy_path = [
   "apps/api/src",
+  "packages/analytics/src",
+  "packages/connectors/src",
   "packages/domain/src",
   "packages/persistence/src",
 ]

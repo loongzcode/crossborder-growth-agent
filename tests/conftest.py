@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOTS = (
     ROOT / "apps" / "api" / "src",
+    ROOT / "packages" / "analytics" / "src",
+    ROOT / "packages" / "connectors" / "src",
     ROOT / "packages" / "domain" / "src",
     ROOT / "packages" / "persistence" / "src",
 )

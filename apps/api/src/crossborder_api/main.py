@@ -7,6 +7,8 @@ from crossborder_api.config import Settings, get_settings
 from crossborder_api.errors import register_exception_handlers
 from crossborder_api.middleware import request_context_middleware
 from crossborder_api.routes.health import router as health_router
+from crossborder_api.routes.ingestion import router as ingestion_router
+from crossborder_api.routes.metrics import router as metrics_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -30,6 +32,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     register_exception_handlers(app)
     app.include_router(health_router, prefix="/api/v1")
+    app.include_router(ingestion_router, prefix="/api/v1")
+    app.include_router(metrics_router, prefix="/api/v1")
     return app
 
 

@@ -4,7 +4,7 @@
 
 ## Project status
 
-Product requirements and the delivery plan are defined. The Vue administration console is initialized from Art Design Pro and mapped to the final operating workflows. The FastAPI foundation, strict Agent contracts, async persistence boundary, initial migration, and automated test baseline are implemented. Data ingestion and metric services are next.
+Product requirements and the delivery plan are defined. The Vue administration console is initialized from Art Design Pro and mapped to the final operating workflows. The backend now includes strict Agent contracts, async persistence, advertising CSV/XLSX preview, schema governance, quality checks, and versioned business metric services.
 
 ## Core capabilities
 
@@ -40,6 +40,8 @@ See [docs/architecture.md](docs/architecture.md) for the system boundary and col
 │   ├── api/              FastAPI application
 │   └── web/              Vue administration console
 ├── packages/
+│   ├── analytics/        Versioned deterministic business formulas
+│   ├── connectors/       Platform connector contracts and file ingestion
 │   ├── domain/           Strict domain and Agent contracts
 │   └── persistence/      Async SQLAlchemy infrastructure
 ├── migrations/           Alembic database migrations
@@ -67,6 +69,13 @@ uv run ruff check apps/api/src packages migrations tests
 uv run ruff format --check apps/api/src packages migrations tests
 uv run mypy
 uv run pytest
+```
+
+Preview the synthetic TikTok Ads export without importing it:
+
+```bash
+curl -F "file=@data/samples/tiktok_ads_sample.csv" \
+  http://127.0.0.1:8000/api/v1/ingestion/advertising/preview
 ```
 
 ## Data policy
