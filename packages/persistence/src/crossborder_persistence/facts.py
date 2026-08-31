@@ -27,6 +27,7 @@ from crossborder_persistence.models import Base, TimestampMixin
 
 class DataSourceModel(TimestampMixin, Base):
     __tablename__ = "data_sources"
+    __table_args__ = (UniqueConstraint("organization_id", "name", name="uq_data_source_org_name"),)
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     organization_id: Mapped[UUID] = mapped_column(
@@ -43,7 +44,14 @@ class DataSourceModel(TimestampMixin, Base):
         nullable=False,
     )
     configuration: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    credentials_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    connection_status: Mapped[str] = mapped_column(
+        String(32), default="untested", nullable=False, index=True
+    )
+    last_tested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
 
 class SyncJobModel(TimestampMixin, Base):

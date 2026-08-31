@@ -50,7 +50,20 @@ MENU_SEEDS = (
         "ri:database-2-line",
         20,
         children=(
-            MenuSeed("DataSources", "sources", "/workspace/index", "menus.data.sources", sort=10),
+            MenuSeed(
+                "DataSources",
+                "sources",
+                "/data/sources",
+                "menus.data.sources",
+                sort=10,
+                permissions=(
+                    ("data:source:list", "查看数据源"),
+                    ("data:source:add", "新增数据源"),
+                    ("data:source:edit", "编辑数据源"),
+                    ("data:source:delete", "停用数据源"),
+                    ("data:source:test", "测试连接"),
+                ),
+            ),
             MenuSeed("DataQuality", "quality", "/workspace/index", "menus.data.quality", sort=20),
         ),
     ),
@@ -242,7 +255,7 @@ MENU_SEEDS = (
 )
 
 
-async def _create_menu_tree(
+async def _upsert_menu_tree(
     session: AsyncSession,
     seeds: tuple[MenuSeed, ...],
     *,
@@ -250,23 +263,33 @@ async def _create_menu_tree(
 ) -> list[SystemMenuModel]:
     created: list[SystemMenuModel] = []
     for seed in seeds:
-        menu = SystemMenuModel(
-            parent_id=parent_id,
-            name=seed.name,
-            path=seed.path,
-            component=seed.component,
-            title=seed.title,
-            icon=seed.icon,
-            sort=seed.sort,
-            enabled=True,
-            keep_alive=not bool(seed.children),
+        menu = await session.scalar(
+            select(SystemMenuModel)
+            .options(selectinload(SystemMenuModel.permissions))
+            .where(SystemMenuModel.name == seed.name)
         )
-        session.add(menu)
+        if menu is None:
+            menu = SystemMenuModel(name=seed.name, permissions=[])
+            session.add(menu)
+        menu.parent_id = parent_id
+        menu.path = seed.path
+        menu.component = seed.component
+        menu.title = seed.title
+        menu.icon = seed.icon
+        menu.sort = seed.sort
+        menu.enabled = True
+        menu.keep_alive = not bool(seed.children)
         await session.flush()
+        permissions_by_code = {permission.code: permission for permission in menu.permissions}
         for sort, (code, title) in enumerate(seed.permissions, start=1):
-            session.add(SystemPermissionModel(menu_id=menu.id, code=code, title=title, sort=sort))
+            permission = permissions_by_code.get(code)
+            if permission is None:
+                permission = SystemPermissionModel(code=code, title=title, sort=sort)
+                menu.permissions.append(permission)
+            permission.title = title
+            permission.sort = sort
         created.append(menu)
-        created.extend(await _create_menu_tree(session, seed.children, parent_id=menu.id))
+        created.extend(await _upsert_menu_tree(session, seed.children, parent_id=menu.id))
     return created
 
 
@@ -310,6 +333,8 @@ async def seed_default_system(
         session.add(super_role)
         await session.flush()
 
+    await _upsert_menu_tree(session, MENU_SEEDS)
+    await session.flush()
     menus = list(
         (
             await session.scalars(
@@ -319,19 +344,6 @@ async def seed_default_system(
             )
         ).all()
     )
-    if not menus:
-        await _create_menu_tree(session, MENU_SEEDS)
-        await session.flush()
-        menus = list(
-            (
-                await session.scalars(
-                    select(SystemMenuModel)
-                    .options(selectinload(SystemMenuModel.permissions))
-                    .order_by(SystemMenuModel.sort)
-                )
-            ).all()
-        )
-
     super_role.menus = menus
     super_role.permissions = [permission for menu in menus for permission in menu.permissions]
 

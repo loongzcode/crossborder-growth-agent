@@ -185,4 +185,84 @@ declare namespace Api {
       sort: number
     }
   }
+
+  namespace DataSource {
+    type Provider = 'file_upload' | 'tiktok_ads' | 'tiktok_shop'
+    type Domain =
+      | 'advertising'
+      | 'orders'
+      | 'products'
+      | 'costs'
+      | 'inventory'
+      | 'refunds'
+      | 'reviews'
+      | 'currency_rates'
+      | 'creatives'
+    type ConnectionStatus = 'untested' | 'connected' | 'failed'
+
+    interface ProviderField {
+      key: string
+      label: string
+      secret: boolean
+      required: boolean
+    }
+
+    interface ProviderSpec {
+      value: Provider
+      label: string
+      domains: Domain[]
+      fields: ProviderField[]
+    }
+
+    interface DataSourceItem {
+      id: string
+      name: string
+      provider: Provider
+      domain: Domain
+      configuration: Record<string, string | number | boolean>
+      hasCredentials: boolean
+      enabled: boolean
+      connectionStatus: ConnectionStatus
+      lastTestedAt: string | null
+      lastErrorCode: string | null
+      lastErrorMessage: string | null
+      lastSyncStatus: string | null
+      lastSyncAt: string | null
+      createdAt: string
+      updatedAt: string
+    }
+
+    type DataSourcePage = Api.Common.PaginatedResponse<DataSourceItem>
+
+    interface SearchParams extends Api.Common.CommonSearchParams {
+      name?: string
+      provider?: Provider
+      domain?: Domain
+      connectionStatus?: ConnectionStatus
+      enabled?: boolean
+      sortBy?: 'createdAt' | 'name' | 'lastTestedAt'
+      sortOrder?: 'asc' | 'desc'
+    }
+
+    interface DataSourceWrite {
+      name: string
+      provider: Provider
+      domain: Domain
+      configuration: Record<string, string | number | boolean>
+      credentials?: {
+        accessToken?: string
+        appSecret?: string
+      }
+      enabled: boolean
+    }
+
+    interface ConnectionTestResult {
+      status: ConnectionStatus
+      provider: Provider
+      message: string
+      checkedAt: string
+      upstreamRequestId: string | null
+      metadata: Record<string, string | number | boolean>
+    }
+  }
 }

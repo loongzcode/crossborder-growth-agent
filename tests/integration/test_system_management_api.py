@@ -70,6 +70,16 @@ async def test_bootstrap_admin_can_login_and_receive_database_menus(
     assert user_info.json()["data"]["roles"] == ["R_SUPER"]
     assert menus.status_code == 200
     assert {item["name"] for item in menus.json()["data"]} >= {"Dashboard", "System"}
+    data_center = next(item for item in menus.json()["data"] if item["name"] == "DataCenter")
+    data_sources = next(item for item in data_center["children"] if item["name"] == "DataSources")
+    assert data_sources["component"] == "/data/sources"
+    assert {item["permissionCode"] for item in data_sources["meta"]["authList"]} == {
+        "data:source:list",
+        "data:source:add",
+        "data:source:edit",
+        "data:source:delete",
+        "data:source:test",
+    }
 
 
 @pytest.mark.asyncio
