@@ -19,6 +19,7 @@ from crossborder_persistence.facts import (
     SchemaMappingModel,
     SyncJobModel,
 )
+from crossborder_persistence.mapping_models import MappingTemplateModel
 from crossborder_persistence.models import AgentRunModel, Base, OrganizationModel
 from crossborder_persistence.system_models import (
     SystemMenuModel,
@@ -42,6 +43,7 @@ __all__ = [
     "DataQualityIssueModel",
     "DataSourceModel",
     "InventorySnapshotModel",
+    "MappingTemplateModel",
     "OrderItemModel",
     "OrderModel",
     "OrganizationModel",

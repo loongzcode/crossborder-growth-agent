@@ -228,6 +228,7 @@
     "data": {
       "title": "数据中心",
       "sources": "数据源与同步",
+      "imports": "文件导入工作台",
       "quality": "数据质量"
     },
     "advertising": {

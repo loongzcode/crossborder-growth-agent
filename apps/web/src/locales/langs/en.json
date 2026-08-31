@@ -228,6 +228,7 @@
     "data": {
       "title": "Data Center",
       "sources": "Sources & Sync",
+      "imports": "File Import Workspace",
       "quality": "Data Quality"
     },
     "advertising": {

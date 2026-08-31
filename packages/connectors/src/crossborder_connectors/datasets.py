@@ -7,9 +7,13 @@ from typing import Any
 from pydantic import ValidationError
 
 from crossborder_connectors.mapping import (
+    DATASET_FIELD_ALIASES,
     DATASET_REQUIRED_FIELDS,
     DATASET_SCHEMA_VERSION,
+    apply_mapping_overrides,
     map_dataset_headers,
+    mapping_is_usable,
+    mapping_signature,
     recognized_dataset_field,
 )
 from crossborder_connectors.tabular import read_tabular
@@ -66,7 +70,7 @@ def _row_values(row: list[Any], mappings: list[ColumnMapping]) -> dict[str, Any]
     for index, mapping in enumerate(mappings):
         if (
             mapping.canonical_field
-            and mapping.status is MappingStatus.AUTOMATIC
+            and mapping_is_usable(mapping)
             and mapping.canonical_field not in values
         ):
             values[mapping.canonical_field] = row[index] if index < len(row) else None
@@ -233,16 +237,21 @@ def _business_key(record: StandardRecord, domain: DataDomain) -> tuple[str, ...]
 
 
 def preview_dataset_file(
-    content: bytes, filename: str, domain: DataDomain
+    content: bytes,
+    filename: str,
+    domain: DataDomain,
+    mapping_overrides: dict[str, str | None] | None = None,
 ) -> DatasetIngestionPreview:
     if domain not in NORMALIZERS:
         raise ValueError(f"{domain.value} 请使用专用预检接口")
     table = read_tabular(content, filename)
     header_index, headers = _find_header(domain, table.rows)
-    mappings = map_dataset_headers(domain, headers)
-    mapped_fields = {
-        mapping.canonical_field for mapping in mappings if mapping.status is MappingStatus.AUTOMATIC
-    }
+    mappings = apply_mapping_overrides(
+        map_dataset_headers(domain, headers),
+        mapping_overrides,
+        set(DATASET_FIELD_ALIASES[domain]),
+    )
+    mapped_fields = {mapping.canonical_field for mapping in mappings if mapping_is_usable(mapping)}
     missing_fields = sorted(DATASET_REQUIRED_FIELDS[domain] - mapped_fields)
     issues = [
         DataQualityIssue(
@@ -322,6 +331,7 @@ def preview_dataset_file(
         accepted_row_count=len(records),
         rejected_row_count=len(source_rows) - len(records),
         mappings=mappings,
+        mapping_signature=mapping_signature(mappings),
         unknown_columns=[
             mapping.source_column
             for mapping in mappings

@@ -64,7 +64,20 @@ MENU_SEEDS = (
                     ("data:source:test", "测试连接"),
                 ),
             ),
-            MenuSeed("DataQuality", "quality", "/workspace/index", "menus.data.quality", sort=20),
+            MenuSeed(
+                "DataImports",
+                "imports",
+                "/data/imports",
+                "menus.data.imports",
+                sort=20,
+                permissions=(
+                    ("data:ingestion:preview", "预检上传文件"),
+                    ("data:ingestion:template", "管理列映射模板"),
+                    ("data:ingestion:import", "确认正式导入"),
+                    ("data:ingestion:lineage", "查看导入血缘"),
+                ),
+            ),
+            MenuSeed("DataQuality", "quality", "/workspace/index", "menus.data.quality", sort=30),
         ),
     ),
     MenuSeed(

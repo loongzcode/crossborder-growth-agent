@@ -24,6 +24,7 @@ class DataDomain(StrEnum):
 
 class MappingStatus(StrEnum):
     AUTOMATIC = "automatic"
+    CONFIRMED = "confirmed"
     NEEDS_REVIEW = "needs_review"
     UNMAPPED = "unmapped"
 
@@ -95,6 +96,9 @@ class AdvertisingIngestionPreview(StrictDomainModel):
     accepted_row_count: int = Field(ge=0)
     rejected_row_count: int = Field(ge=0)
     mappings: list[ColumnMapping]
+    mapping_signature: str = Field(min_length=64, max_length=64)
+    mapping_template_id: str | None = None
+    mapping_template_version: int | None = Field(default=None, ge=1)
     unknown_columns: list[str]
     issues: list[DataQualityIssue]
     records: list[AdvertisingRecord]
@@ -275,6 +279,9 @@ class DatasetIngestionPreview(StrictDomainModel):
     accepted_row_count: int = Field(ge=0)
     rejected_row_count: int = Field(ge=0)
     mappings: list[ColumnMapping]
+    mapping_signature: str = Field(min_length=64, max_length=64)
+    mapping_template_id: str | None = None
+    mapping_template_version: int | None = Field(default=None, ge=1)
     unknown_columns: list[str]
     issues: list[DataQualityIssue]
     records: list[StandardRecord]

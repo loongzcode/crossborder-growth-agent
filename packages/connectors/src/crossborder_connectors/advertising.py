@@ -8,9 +8,13 @@ from pydantic import ValidationError
 
 from crossborder_analytics import AdMetricInput, calculate_ad_metrics
 from crossborder_connectors.mapping import (
+    ADVERTISING_FIELD_ALIASES,
     DATASET_SCHEMA_VERSION,
     REQUIRED_ADVERTISING_FIELDS,
+    apply_mapping_overrides,
     map_advertising_headers,
+    mapping_is_usable,
+    mapping_signature,
     recognized_field,
 )
 from crossborder_connectors.tabular import read_tabular
@@ -55,7 +59,7 @@ def _row_values(row: list[Any], mappings: list[ColumnMapping]) -> dict[str, Any]
     for index, mapping in enumerate(mappings):
         if (
             mapping.canonical_field
-            and mapping.status is MappingStatus.AUTOMATIC
+            and mapping_is_usable(mapping)
             and mapping.canonical_field not in values
         ):
             values[mapping.canonical_field] = row[index] if index < len(row) else None
@@ -95,13 +99,19 @@ def _normalize_record(values: dict[str, Any], row_number: int) -> AdvertisingRec
     return AdvertisingRecord.model_validate(normalized)
 
 
-def preview_advertising_file(content: bytes, filename: str) -> AdvertisingIngestionPreview:
+def preview_advertising_file(
+    content: bytes,
+    filename: str,
+    mapping_overrides: dict[str, str | None] | None = None,
+) -> AdvertisingIngestionPreview:
     table = read_tabular(content, filename)
     header_index, headers = _find_header(table.rows)
-    mappings = map_advertising_headers(headers)
-    mapped_fields = {
-        mapping.canonical_field for mapping in mappings if mapping.status is MappingStatus.AUTOMATIC
-    }
+    mappings = apply_mapping_overrides(
+        map_advertising_headers(headers),
+        mapping_overrides,
+        set(ADVERTISING_FIELD_ALIASES),
+    )
+    mapped_fields = {mapping.canonical_field for mapping in mappings if mapping_is_usable(mapping)}
     missing_fields = sorted(REQUIRED_ADVERTISING_FIELDS - mapped_fields)
     issues = [
         DataQualityIssue(
@@ -195,6 +205,7 @@ def preview_advertising_file(content: bytes, filename: str) -> AdvertisingIngest
         accepted_row_count=len(records),
         rejected_row_count=len(source_rows) - len(records),
         mappings=mappings,
+        mapping_signature=mapping_signature(mappings),
         unknown_columns=[
             mapping.source_column
             for mapping in mappings

@@ -1,5 +1,7 @@
-"""Canonical field aliases for advertising reports."""
+"""Canonical field aliases and deterministic mapping confirmation."""
 
+import hashlib
+import json
 import re
 import unicodedata
 from collections import Counter
@@ -193,6 +195,70 @@ def map_dataset_headers(domain: DataDomain, headers: list[str]) -> list[ColumnMa
     if domain is DataDomain.ADVERTISING:
         return map_advertising_headers(headers)
     return _map_headers(headers, DATASET_ALIAS_INDEX.get(domain, {}))
+
+
+def mapping_is_usable(mapping: ColumnMapping) -> bool:
+    return mapping.status in {MappingStatus.AUTOMATIC, MappingStatus.CONFIRMED}
+
+
+def mapping_signature(mappings: list[ColumnMapping]) -> str:
+    payload = [
+        {
+            "source_column": mapping.source_column,
+            "canonical_field": mapping.canonical_field,
+        }
+        for mapping in mappings
+    ]
+    serialized = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def apply_mapping_overrides(
+    mappings: list[ColumnMapping],
+    overrides: dict[str, str | None] | None,
+    allowed_fields: set[str] | frozenset[str],
+) -> list[ColumnMapping]:
+    if not overrides:
+        return mappings
+
+    source_columns = {mapping.source_column for mapping in mappings}
+    unknown_sources = sorted(set(overrides) - source_columns)
+    if unknown_sources:
+        raise ValueError(f"映射包含文件中不存在的源列：{', '.join(unknown_sources)}")
+    invalid_targets = sorted(
+        {
+            target
+            for target in overrides.values()
+            if target is not None and target not in allowed_fields
+        }
+    )
+    if invalid_targets:
+        raise ValueError(f"映射包含不支持的标准字段：{', '.join(invalid_targets)}")
+
+    result: list[ColumnMapping] = []
+    for mapping in mappings:
+        if mapping.source_column not in overrides:
+            result.append(mapping)
+            continue
+        target = overrides[mapping.source_column]
+        result.append(
+            ColumnMapping(
+                source_column=mapping.source_column,
+                canonical_field=target,
+                status=MappingStatus.CONFIRMED if target else MappingStatus.UNMAPPED,
+                confidence=1 if target else 0,
+            )
+        )
+
+    counts = Counter(
+        mapping.canonical_field for mapping in result if mapping.canonical_field is not None
+    )
+    return [
+        mapping.model_copy(update={"status": MappingStatus.NEEDS_REVIEW, "confidence": 0.5})
+        if mapping.canonical_field and counts[mapping.canonical_field] > 1
+        else mapping
+        for mapping in result
+    ]
 
 
 def _map_headers(headers: list[str], alias_index: dict[str, str]) -> list[ColumnMapping]:

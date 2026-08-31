@@ -265,4 +265,87 @@ declare namespace Api {
       metadata: Record<string, string | number | boolean>
     }
   }
+
+  namespace Ingestion {
+    type MappingStatus = 'automatic' | 'confirmed' | 'needs_review' | 'unmapped'
+
+    interface ColumnMapping {
+      source_column: string
+      canonical_field: string | null
+      status: MappingStatus
+      confidence: number
+    }
+
+    interface QualityIssue {
+      code: string
+      severity: 'info' | 'warning' | 'error'
+      message: string
+      row_number: number | null
+      column: string | null
+      value: unknown
+    }
+
+    interface Preview {
+      domain: Api.DataSource.Domain
+      schema_version: string
+      filename: string
+      file_checksum_sha256: string
+      header_row_number: number
+      source_row_count: number
+      accepted_row_count: number
+      rejected_row_count: number
+      mappings: ColumnMapping[]
+      mapping_signature: string
+      mapping_template_id: string | null
+      mapping_template_version: number | null
+      unknown_columns: string[]
+      issues: QualityIssue[]
+      records: Record<string, unknown>[]
+      aggregate_metrics?: Record<string, string | number | null>
+    }
+
+    interface FieldCatalog {
+      domain?: Api.DataSource.Domain
+      schema_version?: string
+      required_fields: string[]
+      aliases: Record<string, string[]>
+      example_mappings: ColumnMapping[]
+    }
+
+    interface MappingOverride {
+      source_column: string
+      canonical_field: string | null
+    }
+
+    interface MappingTemplate {
+      id: string
+      data_source_id: string
+      domain: Api.DataSource.Domain
+      name: string
+      version: number
+      schema_version: string
+      mappings: MappingOverride[]
+      mapping_signature: string
+      active: boolean
+      created_by: string | null
+      created_at: string
+    }
+
+    interface MappingTemplatePage {
+      records: MappingTemplate[]
+      total: number
+    }
+
+    interface ImportResult {
+      status: 'imported' | 'duplicate'
+      domain: Api.DataSource.Domain
+      sync_job_id: string
+      raw_batch_id: string
+      source_row_count: number
+      imported_row_count: number
+      rejected_row_count: number
+      file_checksum_sha256: string
+      lineage_path: string
+    }
+  }
 }

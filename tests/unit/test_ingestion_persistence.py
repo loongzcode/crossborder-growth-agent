@@ -27,12 +27,19 @@ def test_business_fact_metadata_contains_all_final_data_domains() -> None:
     }
 
     assert expected_tables <= set(Base.metadata.tables)
+    assert "mapping_templates" in Base.metadata.tables
     mapping_constraints = {
         constraint.name
         for constraint in Base.metadata.tables["schema_mappings"].constraints
         if constraint.name
     }
     assert "uq_mapping_source_version_column" in mapping_constraints
+    template_constraints = {
+        constraint.name
+        for constraint in Base.metadata.tables["mapping_templates"].constraints
+        if constraint.name
+    }
+    assert "uq_mapping_template_source_name_version" in template_constraints
 
 
 async def test_import_rejects_data_source_outside_organization_scope() -> None:
